@@ -87,9 +87,9 @@ echo "##### 06. The size of the new ramdisk is = $ramdsize"
 
 echo "##### 07. Checking if ramdsize is bigger than the stock one"
 if [ $ramdsize -gt $count ]; then
+	echo "##### Your initramfs needs to be gzipped!! ###"
 	cp $new_ramdisk out/ramdisk.backup
 	cat out/ramdisk.backup | gzip -f -9 > out/ramdisk.cpio
-	echo "##### Your initramfs needs to be gzipped!! ###"
 else
 	cp $new_ramdisk out/ramdisk.cpio
 fi
@@ -107,20 +107,11 @@ if [ $franksize -le $end ]; then
 	tempnum=$((end - franksize))
 	dd if=resources/blankfile bs=1 count=$tempnum of=out/padding
 	cat out/padding out/tail.img > out/newtail.img
-	cat out/franken.img out/newtail.img > out/piggy.img
+	cat out/franken.img out/newtail.img > out/new_Image
 else
 	echo "##### ERROR : Your initramfs is still BIGGER than the stock initramfs $franksize > $end #####"
 	exit
 fi
-
-# echo "##### 11. Gzipping piggy.img"
-# gzip -f -9 < out/piggy.img > out/piggy.gz
-
-# echo "##### 12. Merging [boot + piggy.gz] into new zImage"
-# cat out/boot.img out/piggy.gz > out/zImage
-
-# echo "##### 13. Creating zImage-inject.tar for Odin"
-# tar c out/zImage > zImage-inject.tar
 
 #============================================
 # rebuild zImage
