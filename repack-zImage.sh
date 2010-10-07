@@ -1,11 +1,10 @@
 #!/bin/sh
 ##############################################################################
-# usage : ./repack.sh [kernel] [initramfs.cpio] [kernel source dir]
-# example : ./repack.sh  /data/android/initramfs-utils/zImage /data/android/captivate-initramfs/ramdisk.cpio \
+# usage : ./repack.sh [kernel] [initramfs_direcotry] [kernel source dir]
+# example : ./repack.sh  /data/android/initramfs-utils/zImage /data/android/captivate-initramfs \
 #                  /data/android/linux-2.6.32
 # based on editor.sh from dkcldark @ xda
 ##############################################################################
-set -x
 # you should point where your cross-compiler is
 COMPILER_PATH="${HOME}/arm-none-eabi-4.3.4/bin"
 COMPILER="$COMPILER_PATH/arm-none-eabi"
@@ -14,7 +13,7 @@ AOSP="/data/android/aosp"
 ##############################################################################
 
 zImage=$1
-new_ramdisk=$2
+new_ramdisk_dir=$2
 KSRC=$3
 determiner=0
 Image_here="./out/Image"
@@ -81,17 +80,23 @@ dd if=$Image_here bs=1 count=$start of=out/head.img
 echo "##### 05. Making a tail.img ( from $end ~ $filesize )"
 dd if=$Image_here bs=1 skip=$end of=out/tail.img
 
-# Check the new ramdisk's size
-ramdsize=`ls -l $new_ramdisk | awk '{print $5}'`
+# Create the cpio archive
+OUT=`pwd`/out
+pushd $new_ramdisk_dir
+find ./ | cpio -o -H newc > $OUT/new_ramdisk.cpio
+popd
+
+# Check the new ramdispk's size
+ramdsize=`ls -l out/new_ramdisk.cpio | awk '{print $5}'`
 echo "##### 06. The size of the new ramdisk is = $ramdsize"
 
 echo "##### 07. Checking if ramdsize is bigger than the stock one"
 if [ $ramdsize -gt $count ]; then
 	echo "##### Your initramfs needs to be gzipped!! ###"
-	cp $new_ramdisk out/ramdisk.backup
+	cp out/new_ramdisk.cpio out/ramdisk.backup
 	cat out/ramdisk.backup | gzip -f -9 > out/ramdisk.cpio
 else
-	cp $new_ramdisk out/ramdisk.cpio
+	cp out/new_ramdisk.cpio out/ramdisk.cpio
 fi
 
 # FrankenStein is being made #1
