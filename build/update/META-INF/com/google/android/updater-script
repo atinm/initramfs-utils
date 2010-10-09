@@ -1,0 +1,12 @@
+ui_print("******************************");
+ui_print("* ClockworkMode recovery     *");
+ui_print("* for Samsung Captivate v2.2 *");
+ui_print("* by atinm @ github          *");
+ui_print("******************************");
+mount("rfs", "/dev/block/stl9", "/system");
+ui_print("Unpacking files...");
+package_extract_file("recovery", "/system/bin");
+set_perm(0, 0, 0755, "/system/bin/recovery");
+package_extract_file("zImage", "zImage");
+ui_print("Flashing kernel...");
+write_raw_image("zImage", "/dev/block/bml7")
