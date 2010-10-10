@@ -163,23 +163,43 @@ echo "##### 17. Creating zImage-inject.tar for Odin"
 tar c -C out zImage > zImage-inject.tar
 
 # Generate update.zip for flashing
-echo "18. Generating update.zip for flashing"
+echo "##### 18. Generating update.zip for flashing"
 rm -fr update.zip
 cp out/zImage build/update/zImage
 OUTFILE="$PWD/update.zip"
 pushd build/update
-eval "$MKZIP" >/dev/null 2>&1
+
+FILES=
+SYMLINKS=
+
+for file in $(find .)
+do
+
+if [ -d $file ]
+then
+  continue
+fi
+
+META_INF=$(echo $file | grep META-INF)
+if [ ! -z $META_INF ]
+then
+    continue;
+fi
+
+if [ -h $file ]
+then
+    SYMLINKS=$SYMLINKS' '$file
+elif [ -f $file ]
+then
+    FILES=$FILES' '$file
+fi
+done
+echo "##### 19. Zipping $OUTFILE..."
+zip -ry $OUTFILE-unsigned . -x $SYMLINKS '*\[*' '*\[\[*'
+echo "##### 20. Signing $OUTFILE for flashing"
+java -jar $AOSP/out/host/linux-x86/framework/signapk.jar -w $AOSP/build/target/product/security/testkey.x509.pem $AOSP/build/target/product/security/testkey.pk8 $OUTFILE-unsigned $OUTFILE
 popd
 
-echo "19. Signing the update.zip file for flashing"
-java -jar "$AOSP"/out/host/linux-x86/framework/signapk.jar \
-	"$AOSP"/build/target/product/security/testkey.x509.pem \
-	"$AOSP"/build/target/product/security/testkey.pk8 \
-	"$OUTFILE" "$OUTFILE"-signed
-mv "$OUTFILE"-signed "$OUTFILE"
 
-# #rm $KSRC/arch/arm/boot/compressed/vmlinux $KSRC/arch/arm/boot/compressed/piggy.o $KSRC/arch/arm/boot/compressed/misc.o $KSRC/arch/arm/boot/compressed/head.o $KSRC/arch/arm/boot/compressed/piggy.gz $KSRC/arch/arm/boot/Image
-# #rm -r out
-
-echo "##### 20. Done!"
+echo "##### 21. Done!"
 
