@@ -20,12 +20,12 @@ if [ ! $pos = "" ]; then
     echo "-I- Extracting compressed cpio image from kernel image (start = $pos)"
     dd if=/tmp/kernel.img bs=1 skip=$pos | gunzip > /tmp/cpio.img
     start=`grep -a -b -m 1 --only-matching '070701' /tmp/cpio.img | head -1 | cut -f 1 -d :`
-    end=`grep -a -b -m 1 --only-matching 'TRAILER!!!' /tmp/cpio.img | head -1 | cut -f 1 -d :`
+    end=`grep -a -b --only-matching 'TRAILER!!!' /tmp/cpio.img | tail -1 | cut -f 1 -d :`
     inputfile=/tmp/cpio.img
 else
     echo "-I- Already uncompressed cpio.img, not decompressing"
     start=`grep -a -b -m 1 --only-matching '070701' /tmp/kernel.img | head -1 | cut -f 1 -d :`
-    end=`grep -a -b -m 1 --only-matching 'TRAILER!!!' /tmp/kernel.img | head -1 | cut -f 1 -d :`
+    end=`grep -a -b --only-matching 'TRAILER!!!' /tmp/kernel.img | tail -1 | cut -f 1 -d :`
     inputfile=/tmp/kernel.img
 fi
 

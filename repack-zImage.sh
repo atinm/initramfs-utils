@@ -5,6 +5,7 @@
 #                  /data/android/linux-2.6.32
 # based on editor.sh from dkcldark @ xda
 ##############################################################################
+set -x
 # you should point where your cross-compiler is
 COMPILER_PATH="${HOME}/arm-none-eabi-4.3.4/bin"
 COMPILER="$COMPILER_PATH/arm-none-eabi"
@@ -15,29 +16,74 @@ AOSP="/data/android/aosp"
 zImage=$1
 new_ramdisk_dir=$2
 KSRC=$3
+TITLE=$4
 determiner=0
 Image_here="./out/Image"
 MKZIP='7z -mx9 -mmt=1 a "$OUTFILE" .'
+TARGET_DEVICE_NAME=SGH-I897
+DATE=`date`
 
+write_script() {
+    test -n "$TARGET_DEVICE_NAME" && \
+	echo "assert(getprop(\"ro.product.device\") == \"$TARGET_DEVICE_NAME\" || getprop(\"ro.build.product\") == \"$TARGET_DEVICE_NAME\");"
+    declare -f pre_hook >/dev/null 2>&1 && \
+	pre_hook
+    title="ui_print(\"** $TITLE \");"
+    echo $title
+    echo 'ui_print("** atinm @ xda-developers");'
+    date="ui_print(\"** Build date: $DATE \");"
+    echo $date
+    echo 'ui_print("-");'
+    echo 'ui_print("-");'
+    echo 'ui_print("Unpacking files...");'
+    declare -f unpack_hook >/dev/null 2>&1 && \
+	unpack_hook
+    echo 'package_extract_dir("tmp", "/tmp");'
+    declare -f apply_hook >/dev/null 2>&1 && \
+	apply_hook
+    echo 'ui_print("-");'
+    echo 'ui_print("-");'
+    echo 'ui_print("Flashing kernel...");'
+    echo 'write_raw_image("/tmp/zImage", "/dev/block/bml7");'
+    declare -f post_hook >/dev/null 2>&1 && \
+	post_hook
+    echo 'ui_print("** Done!");'
+    return 0
+}
+
+prepare_update() {
+    rm -r build/update/tmp
+    mkdir -p build/update/tmp
+    cp -a out/zImage build/update/tmp
+    write_script >build/update/META-INF/com/google/android/updater-script
+    declare -f prepare_hook >/dev/null 2>&1 && \
+	prepare_hook
+    return 0
+}
+
+if [ -z $1 ]; then
+    echo "##### You should point where the zImage file is in arg 1 #####"
+    exit
+elif [ -z $2 ]; then
+    echo "##### You should point where your new initramfs is in arg 2 #####"
+    exit
+elif [ -z $3 ]; then
+    echo "##### You should point where your kernel source is in arg 3 #####"
+    exit
+elif [ -z $4 ]; then
+    echo "##### You should specify the title for this update in arg 4 #####"
+    exit
+fi
 echo "##### My name is $0 #####"
 echo "##### The kernel is $1 #####"
 echo "##### The ramdisk is $2 #####"
 echo "##### The kernel source is $3 #####"
-if [ $1 = "" ]; then
-	echo "##### You should point where the zImage file is in arg 1 #####"
-	exit
-elif [ $2 = "" ]; then
-	echo "##### You should point where your new initramfs is in arg 2 #####"
-	exit
-elif [ $3 = "" ]; then
-	echo "##### You should point where your kernel source is in arg 3 #####"
-	exit
-fi
+echo "##### The title for this update is $4 #####"
 
 #=======================================================
 # find start of gziped kernel object in the zImage file:
 #=======================================================
-
+rm -rf out
 mkdir out
 
 pos=`grep -P -a -b -m 1 --only-matching '\x1F\x8B\x08' $zImage | cut -f 1 -d :`
@@ -64,8 +110,8 @@ end=$((end + 10))
 count=$((end - start))
 
 if [ $count -lt $determiner ]; then
-  echo "##### ERROR : Couldn't match start/end of the initramfs ."
-  exit
+    echo "##### ERROR : Couldn't match start/end of the initramfs ."
+    exit
 fi
 
 # Check the Image's size
@@ -92,11 +138,11 @@ echo "##### 06. The size of the new ramdisk is = $ramdsize"
 
 echo "##### 07. Checking if ramdsize is bigger than the stock one"
 if [ $ramdsize -gt $count ]; then
-	echo "##### Your initramfs needs to be gzipped!! ###"
-	cp out/new_ramdisk.cpio out/ramdisk.backup
-	cat out/ramdisk.backup | gzip -f -9 > out/ramdisk.cpio
+    echo "##### Your initramfs needs to be gzipped!! ###"
+    cp out/new_ramdisk.cpio out/ramdisk.backup
+    cat out/ramdisk.backup | gzip -f -9 > out/ramdisk.cpio
 else
-	cp out/new_ramdisk.cpio out/ramdisk.cpio
+    cp out/new_ramdisk.cpio out/ramdisk.cpio
 fi
 
 # FrankenStein is being made #1
@@ -109,13 +155,13 @@ franksize=`ls -l out/franken.img | awk '{print $5}'`
 # FrankenStein is being made #2
 echo "##### 10. Merging [head+ramdisk] + padding + tail"
 if [ $franksize -le $end ]; then
-	tempnum=$((end - franksize))
-	dd if=resources/blankfile bs=1 count=$tempnum of=out/padding
-	cat out/padding out/tail.img > out/newtail.img
-	cat out/franken.img out/newtail.img > out/new_Image
+    tempnum=$((end - franksize))
+    dd if=resources/blankfile bs=1 count=$tempnum of=out/padding
+    cat out/padding out/tail.img > out/newtail.img
+    cat out/franken.img out/newtail.img > out/new_Image
 else
-	echo "##### ERROR : Your initramfs is still BIGGER than the stock initramfs $franksize > $end #####"
-	exit
+    echo "##### ERROR : Your initramfs is still BIGGER than the stock initramfs $franksize > $end #####"
+    exit
 fi
 
 #============================================
@@ -158,8 +204,8 @@ tar c -C out zImage > zImage-inject.tar
 
 # Generate update.zip for flashing
 echo "18. Generating update.zip for flashing"
-rm -fr update.zip
-cp out/zImage build/update/zImage
+rm -fr update.zip*
+prepare_update
 OUTFILE="$PWD/update.zip"
 pushd build/update
 
@@ -169,25 +215,26 @@ SYMLINKS=
 for file in $(find .)
 do
 
-if [ -d $file ]
-then
-  continue
-fi
+    if [ -d $file ]
+    then
+	continue
+    fi
 
-META_INF=$(echo $file | grep META-INF)
-if [ ! -z $META_INF ]
-then
-    continue;
-fi
+    META_INF=$(echo $file | grep META-INF)
+    if [ ! -z $META_INF ]
+    then
+	continue;
+    fi
 
-if [ -h $file ]
-then
-    SYMLINKS=$SYMLINKS' '$file
-elif [ -f $file ]
-then
-    FILES=$FILES' '$file
-fi
+    if [ -h $file ]
+    then
+	SYMLINKS=$SYMLINKS' '$file
+    elif [ -f $file ]
+    then
+	FILES=$FILES' '$file
+    fi
 done
+
 echo "Zipping $OUTFILE..."
 zip -ry $OUTFILE-unsigned . -x $SYMLINKS '*\[*' '*\[\[*'
 echo "Signing $OUTFILE for flashing"
