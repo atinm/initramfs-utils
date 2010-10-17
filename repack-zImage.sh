@@ -70,7 +70,7 @@ elif [ -z $2 ]; then
 elif [ -z $3 ]; then
     echo "##### You should point where your kernel source is in arg 3 #####"
     exit
-elif [ -z $4 ]; then
+elif [ -z "$4" ]; then
     echo "##### You should specify the title for this update in arg 4 #####"
     exit
 fi
@@ -129,7 +129,7 @@ dd if=$Image_here bs=1 skip=$end of=out/tail.img
 # Create the cpio archive
 OUT=`pwd`/out
 pushd $new_ramdisk_dir
-find ./ | cpio -o -H newc > $OUT/new_ramdisk.cpio
+find ./ | grep -v ".gitignore" | cpio -o -H newc > $OUT/new_ramdisk.cpio
 popd
 
 # Check the new ramdispk's size
