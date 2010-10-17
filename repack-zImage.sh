@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 ##############################################################################
 # usage : ./repack.sh [kernel] [initramfs_direcotry] [kernel source dir] "title of build"
 # example : ./repack.sh  /data/android/initramfs-utils/zImage /data/android/captivate-initramfs \

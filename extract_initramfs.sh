@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 zImage=$1
 #========================================================
 # find start of gziped kernel object in the zImage file:
@@ -29,8 +29,8 @@ else
     inputfile=/tmp/kernel.img
 fi
 
-end=$((end + 10))
-count=$((end - start))
+end=$(($end+10))
+count=$(($end-$start))
 if (($count < 0)); then
     echo "-E- Couldn't match start/end of the initramfs image."
     exit
