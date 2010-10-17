@@ -1,8 +1,8 @@
 #!/bin/sh
 ##############################################################################
-# usage : ./repack.sh [kernel] [initramfs_direcotry] [kernel source dir]
+# usage : ./repack.sh [kernel] [initramfs_direcotry] [kernel source dir] "title of build"
 # example : ./repack.sh  /data/android/initramfs-utils/zImage /data/android/captivate-initramfs \
-#                  /data/android/linux-2.6.32
+#                  /data/android/linux-2.6.32 "title of build"
 # based on editor.sh from dkcldark @ xda
 ##############################################################################
 set -x
