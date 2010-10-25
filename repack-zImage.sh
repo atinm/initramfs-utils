@@ -23,6 +23,9 @@ MKZIP='7z -mx9 -mmt=1 a "$OUTFILE" .'
 TARGET_DEVICE_NAME=SGH-I897
 DATE=`date`
 
+#load local definitions for unpack_hook, apply_hook, prepare_hook, post_hook if any
+test -f ./locals.sh && source ./locals.sh
+
 write_script() {
     test -n "$TARGET_DEVICE_NAME" && \
 	echo "assert(getprop(\"ro.product.device\") == \"$TARGET_DEVICE_NAME\" || getprop(\"ro.build.product\") == \"$TARGET_DEVICE_NAME\");"
@@ -43,8 +46,6 @@ write_script() {
 	apply_hook
     echo 'ui_print("-");'
     echo 'ui_print("-");'
-    echo 'ui_print("Flashing kernel...");'
-    echo 'write_raw_image("/tmp/zImage", "/dev/block/bml7");'
     declare -f post_hook >/dev/null 2>&1 && \
 	post_hook
     echo 'ui_print("** Done!");'
