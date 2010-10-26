@@ -9,8 +9,6 @@ set -x
 # you should point where your cross-compiler is
 COMPILER_PATH="${HOME}/arm-none-eabi-4.3.4/bin"
 COMPILER="$COMPILER_PATH/arm-none-eabi"
-# you should point this where your AOSP root is
-AOSP="/data/android/aosp"
 ##############################################################################
 
 zImage=$1
@@ -25,6 +23,9 @@ DATE=`date`
 
 #load local definitions for unpack_hook, apply_hook, prepare_hook, post_hook if any
 test -f ./locals.sh && source ./locals.sh
+
+# you should point this where your AOSP root is in the environment
+[ -z "$AOSP" ] && AOSP="/data/android/cm"
 
 write_script() {
     test -n "$TARGET_DEVICE_NAME" && \
